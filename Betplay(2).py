@@ -158,26 +158,40 @@ elif opcion == "👥 Usuarios":
                     guardar_predicciones(predicciones)
                     st.success(f"✅ Predicción registrada para {nombre}")
 
-    # LISTAR PREDICCIONES
-    if predicciones:
-        st.write("### 📋 Predicciones registradas:")
-        for i, p in enumerate(predicciones):
+    # Control para saber qué predicción se está editando
+    if "edit_index" not in st.session_state:
+        st.session_state.edit_index = None
+
+    st.write("### 📋 Predicciones registradas:")
+
+    for i, p in enumerate(predicciones):
+        if st.session_state.edit_index == i:
+            with st.form(f"form_edit_{i}"):
+                nuevo_nombre = st.text_input("✏️ Editar nombre", value=p["nombre"], key=f"edit_nombre_{i}")
+                actualizar = st.form_submit_button("Actualizar")
+                cancelar = st.form_submit_button("Cancelar")
+
+                if actualizar:
+                    if nuevo_nombre.strip() == "":
+                        st.error("El nombre no puede quedar vacío.")
+                    else:
+                        predicciones[i]["nombre"] = nuevo_nombre.strip()
+                        guardar_predicciones(predicciones)
+                        st.success("✅ Nombre actualizado correctamente")
+                        st.session_state.edit_index = None
+                        st.experimental_rerun()
+
+                if cancelar:
+                    st.session_state.edit_index = None
+                    st.experimental_rerun()
+        else:
             col1, col2 = st.columns([4, 1])
             with col1:
                 st.write(f"- {p['nombre']}: {p['marcador'][0]} - {p['marcador'][1]}")
             with col2:
                 if st.button("✏️ Editar nombre", key=f"editar_{i}"):
-                    with st.form(f"form_edit_{i}"):
-                        nuevo_nombre = st.text_input("Editar nombre", value=p["nombre"], key=f"edit_nombre_{i}")
-                        actualizar = st.form_submit_button("Actualizar")
-
-                        if actualizar:
-                            predicciones[i]["nombre"] = nuevo_nombre
-                            guardar_predicciones(predicciones)
-                            st.success("✏️ Nombre actualizado correctamente")
-                            st.stop()
-    else:
-        st.info("No hay predicciones aún.")
+                    st.session_state.edit_index = i
+                    st.experimental_rerun()
 
     # Mostrar marcador en vivo
     goles_local_en_vivo, goles_visitante_en_vivo = partido["marcador_en_vivo"]
@@ -189,5 +203,6 @@ elif opcion == "👥 Usuarios":
         st.info(f"🔴 Está ganando: **{equipo_visitante}**")
     else:
         st.info("⚖️ El partido está empatado.")
+
 
 
