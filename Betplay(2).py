@@ -56,9 +56,9 @@ if opcion == "🧑‍💼 Coordinador":
         st.success("👤 Usuario coordinador logueado")
 
         # Fijar partido
-        fecha = st.date_input("🗕️ Fecha del partido", value=date.today())
+        fecha = st.date_input("📅 Fecha del partido", value=date.today())
         equipo_local = st.text_input("🏠 Nombre del equipo local")
-        equipo_visitante = st.text_input("🚲 Nombre del equipo visitante")
+        equipo_visitante = st.text_input("🛫 Nombre del equipo visitante")
 
         if st.button("Fijar partido"):
             if equipo_local and equipo_visitante:
@@ -80,8 +80,10 @@ if opcion == "🧑‍💼 Coordinador":
             st.markdown("---")
             st.subheader("✏️ Actualizar marcador en vivo")
 
-            goles_local_en_vivo = st.number_input("Goles equipo local (en vivo)", min_value=0, step=1, value=partido["marcador_en_vivo"][0])
-            goles_visitante_en_vivo = st.number_input("Goles equipo visitante (en vivo)", min_value=0, step=1, value=partido["marcador_en_vivo"][1])
+            goles_local_en_vivo = st.number_input("Goles equipo local (en vivo)", min_value=0, step=1,
+                                                  value=partido["marcador_en_vivo"][0])
+            goles_visitante_en_vivo = st.number_input("Goles equipo visitante (en vivo)", min_value=0, step=1,
+                                                       value=partido["marcador_en_vivo"][1])
 
             if st.button("Actualizar marcador en vivo"):
                 partido["marcador_en_vivo"] = [goles_local_en_vivo, goles_visitante_en_vivo]
@@ -99,7 +101,7 @@ if opcion == "🧑‍💼 Coordinador":
                     partido["resultado_final"] = [goles_local_final, goles_visitante_final]
                     partido["final_fijado"] = True
                     guardar_partido(partido)
-                    st.success("🏑 Resultado final fijado")
+                    st.success("🏁 Resultado final fijado")
             else:
                 st.info(f"Resultado final: {partido['local']} {partido['resultado_final'][0]} - {partido['resultado_final'][1]} {partido['visitante']}")
 
@@ -121,7 +123,6 @@ elif opcion == "👥 Usuarios":
     predicciones = cargar_predicciones()
 
     if partido["final_fijado"]:
-        # Mostrar resultado final y ganadores
         goles_local_final, goles_visitante_final = partido["resultado_final"]
         st.success(f"Resultado final: {equipo_local} {goles_local_final} - {goles_visitante_final} {equipo_visitante}")
 
@@ -131,10 +132,10 @@ elif opcion == "👥 Usuarios":
             st.subheader("🏆 ¡Ganador(es)!")
             for g in ganadores:
                 st.write(f"🎉 {g}")
-        guardar_predicciones([])  # Limpiar predicciones tras resultado final
+        guardar_predicciones([])  # Limpiar predicciones después del partido
         st.stop()
 
-    # FORMULARIO DE REGISTRO NUEVO
+    # FORMULARIO NUEVO
     with st.form("form_prediccion"):
         nombre = st.text_input("Nombre del jugador").strip()
         goles_local_pred = st.number_input("Goles equipo local (predicción)", min_value=0, step=1, key="pred_local")
@@ -150,11 +151,14 @@ elif opcion == "👥 Usuarios":
                 if ya_registrado:
                     st.error("⚠️ Esa predicción ya existe. Elige otro resultado.")
                 else:
-                    predicciones.append({"nombre": nombre, "marcador": marcador})
+                    predicciones.append({
+                        "nombre": nombre,
+                        "marcador": marcador
+                    })
                     guardar_predicciones(predicciones)
                     st.success(f"✅ Predicción registrada para {nombre}")
 
-    # LISTAR PREDICCIONES Y PERMITIR EDITAR NOMBRES
+    # LISTAR PREDICCIONES
     if predicciones:
         st.write("### 📋 Predicciones registradas:")
         for i, p in enumerate(predicciones):
@@ -163,18 +167,15 @@ elif opcion == "👥 Usuarios":
                 st.write(f"- {p['nombre']}: {p['marcador'][0]} - {p['marcador'][1]}")
             with col2:
                 if st.button("✏️ Editar nombre", key=f"editar_{i}"):
-                    st.session_state[f"editando_{i}"] = True
+                    with st.form(f"form_edit_{i}"):
+                        nuevo_nombre = st.text_input("Editar nombre", value=p["nombre"], key=f"edit_nombre_{i}")
+                        actualizar = st.form_submit_button("Actualizar")
 
-            if st.session_state.get(f"editando_{i}", False):
-                with st.form(f"form_edit_{i}"):
-                    nuevo_nombre = st.text_input("Editar nombre", value=p["nombre"], key=f"edit_nombre_{i}")
-                    actualizar = st.form_submit_button("Actualizar")
-                    if actualizar:
-                        predicciones[i]["nombre"] = nuevo_nombre
-                        guardar_predicciones(predicciones)
-                        st.session_state[f"editando_{i}"] = False
-                        st.session_state.rerun = True
-
+                        if actualizar:
+                            predicciones[i]["nombre"] = nuevo_nombre
+                            guardar_predicciones(predicciones)
+                            st.success("✏️ Nombre actualizado correctamente")
+                            st.stop()
     else:
         st.info("No hay predicciones aún.")
 
@@ -189,8 +190,4 @@ elif opcion == "👥 Usuarios":
     else:
         st.info("⚖️ El partido está empatado.")
 
-# Ejecutar recarga fuera del flujo
-if st.session_state.get("rerun"):
-    st.session_state.rerun = False
-    st.experimental_rerun()
 
