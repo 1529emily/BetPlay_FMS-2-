@@ -83,7 +83,7 @@ if opcion == "🧑‍💼 Coordinador":
             goles_local_en_vivo = st.number_input("Goles equipo local (en vivo)", min_value=0, step=1,
                                                   value=partido["marcador_en_vivo"][0])
             goles_visitante_en_vivo = st.number_input("Goles equipo visitante (en vivo)", min_value=0, step=1,
-                                                      value=partido["marcador_en_vivo"][1])
+                                                       value=partido["marcador_en_vivo"][1])
 
             if st.button("Actualizar marcador en vivo"):
                 partido["marcador_en_vivo"] = [goles_local_en_vivo, goles_visitante_en_vivo]
@@ -164,7 +164,7 @@ elif opcion == "👥 Usuarios":
         for i, p in enumerate(predicciones):
             col1, col2 = st.columns([4, 1])
             with col1:
-                st.write(f"- {p['nombre']}: {p['marcador'][0]} - {p['marcador'][1]}")
+                st.write(f"- {p.get('nombre', '')}: {p['marcador'][0]} - {p['marcador'][1]}")
             with col2:
                 if st.button("✏️ Editar nombre", key=f"editar_{i}"):
                     st.session_state.edit_index = i  # Guardamos el índice para mostrar el formulario
@@ -172,8 +172,11 @@ elif opcion == "👥 Usuarios":
         # Mostrar formulario de edición solo si edit_index está definido
         if "edit_index" in st.session_state:
             i = st.session_state.edit_index
+            nombre_actual = predicciones[i].get("nombre", "")
+            if nombre_actual is None:
+                nombre_actual = ""
             with st.form(f"form_edit_{i}"):
-                nuevo_nombre = st.text_input("Editar nombre", value=predicciones[i]["nombre"], key=f"edit_nombre_{i}")
+                nuevo_nombre = st.text_input("Editar nombre", value=nombre_actual, key=f"edit_nombre_{i}")
                 actualizar = st.form_submit_button("Actualizar")
 
                 if actualizar:
@@ -184,7 +187,6 @@ elif opcion == "👥 Usuarios":
                         guardar_predicciones(predicciones)
                         st.session_state.edit_index = None
                         st.experimental_rerun()
-
     else:
         st.info("No hay predicciones aún.")
 
